@@ -1,0 +1,8 @@
+pandas
+transformers
+torch
+scikit-learn
+nltk
+scapy
+sentence-transformers
+bertopic

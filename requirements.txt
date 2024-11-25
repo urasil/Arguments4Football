@@ -1,0 +1,17 @@
+pandas
+numpy
+xlrd
+nltk
+scikit-learn
+transformers
+torch
+pardata
+accelerate>=0.21.0
+faiss-cpu
+datasets
+allennlp
+allennlp-models
+bs4
+selenium
+python-dotenv
+openai
