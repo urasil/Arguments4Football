@@ -1,7 +1,7 @@
 import torch
 
 class ArgumentDataset(torch.utils.data.Dataset):
-    def __init__(self, encodings, labels, features=None, sentences=None):
+    def __init__(self, encodings, labels=None, features=None, sentences=None):
         self.encodings = encodings
         self.labels = labels
         self.features = features
@@ -9,7 +9,9 @@ class ArgumentDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         item = {key: val[idx].clone().detach() for key, val in self.encodings.items()}
-        item['labels'] = torch.tensor(self.labels[idx], dtype=torch.long)
+        
+        if self.labels is not None:
+            item['labels'] = torch.tensor(self.labels[idx], dtype=torch.long)
 
         if self.features is not None:
             item['features'] = torch.tensor(self.features[idx], dtype=torch.float)
@@ -20,4 +22,7 @@ class ArgumentDataset(torch.utils.data.Dataset):
         return item
 
     def __len__(self):
-        return len(self.labels)
+        if self.labels is not None:
+            return len(self.labels)
+        
+        return len(self.encodings['input_ids'])

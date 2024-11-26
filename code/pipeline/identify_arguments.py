@@ -1,49 +1,68 @@
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import RobertaForSequenceClassification, RobertaTokenizer
+from torch.utils.data import DataLoader
 import torch
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def load_model_and_tokenizer(model_name):
-    """
-    Load the transformers model and tokenizer.
-    Returns: fine-tuned model and tokenizer
-    """
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)
-    return model, tokenizer
+from arg_model_code.helpers.ArgumentDataset import ArgumentDataset
+from article_scraping.single_article_scraping import Article_Scraper
 
-def identify_arguments(model, tokenizer, sentences, threshold=0.5):
-    """
-    Identify the arguments in a list of sentences
-    Returns: list(str) = arguments
-    """
-    model.eval()  # Set model to evaluation mode
-    sentences = [sentence.lower() for sentence in sentences]
-    arguments = []
+class ArgumentIdentification():
 
-    inputs = tokenizer(sentences, return_tensors="pt", padding=True, truncation=True)
+    def __init__(self, model_name):
+        self.model_name = model_name
+        self.scraper = Article_Scraper()
 
-    with torch.no_grad():
-        outputs = model(**inputs)
-        probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
-
-    for i, prob in enumerate(probabilities):
-        if prob[1] > threshold:  # If probability for "argument" is greater than threshold
-            arguments.append(sentences[i])
+    def get_sentences(self, url):
+        return self.scraper.get_article_sentences(url)
     
-    return arguments
+    def preprocess_sentence(self, sentences):
+        res = []
+        for sentence in sentences:
+            sentence = sentence.lower().replace('\"', '')
+            sentence = '"' + sentence + '"'
+            res.append(sentence)
+        return res
+
+    def identify_arguments(self, url):
+        """
+        Identifies arguments using fine-tuned RoBERTa model
+        Returns: list(str): Arguments
+        """
+
+        model = RobertaForSequenceClassification.from_pretrained(self.model_name, num_labels=2)
+        tokenizer = RobertaTokenizer.from_pretrained(self.model_name)
+        sentences = self.get_sentences(url)
+        processed_sentences = self.preprocess_sentence(sentences)
+        encodings = tokenizer(processed_sentences, padding=True, truncation=True, return_tensors='pt')
+        dataset = ArgumentDataset(encodings=encodings, sentences=sentences)
+        dataloader = DataLoader(dataset, batch_size=16, shuffle=False)
+
+        model.eval()
+        argument_sentences = []
+
+        with torch.no_grad():
+            for batch in dataloader:
+                input_ids = batch['input_ids']
+                attention_mask = batch['attention_mask']
+                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                predictions = torch.argmax(outputs["logits"], dim=-1).cpu().numpy()
+                batch_sentences = batch['sentence']  
+                
+                # Clasification 
+                for i, label in enumerate(predictions):
+                    if label == 1: 
+                        sentence = batch_sentences[i].replace('\\', '')
+                        sentence = batch_sentences[i].replace('/', '')
+                        argument_sentences.append(sentence)
+        
+        return argument_sentences
 
 if __name__ == "__main__":
-    # Example usage
-    model_name = "curr-pure-best"
-    sentences = [
-        "Player X is one of the best forwards in the league.",
-        "The weather tomorrow is expected to be sunny.",
-        "Team Y's tactics were ineffective in the second half.",
-        "This year, the company achieved record profits.",
-        "The referee made a controversial decision that influenced the game."
-    ]
-    
-    model, tokenizer = load_model_and_tokenizer(model_name)
-    identified_arguments = identify_arguments(model, tokenizer, sentences)
-    print("Identified Arguments:")
+    model_name = "../curr-pure-best"
+    identifier = ArgumentIdentification(model_name)
+    identified_arguments = identifier.identify_arguments("https://www.skysports.com/football/newcastle-united-vs-west-ham-united/report/505925")
+    print("---IDENTIFIED ARGUMENTS---")
     for arg in identified_arguments:
-        print(f"- {arg}")
+        print(arg)

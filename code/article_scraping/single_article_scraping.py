@@ -27,13 +27,14 @@ class Article_Scraper:
             if skip_first:
                 self.article_topic = text
                 skip_first = False
-            elif len(text) > 1 and text[0] != '\n':
+            elif len(text) > 3 and text[0] != '\n':
                 self.article_content.append(text)
 
     def tokenize_sentences(self):
         split_sentences = []
         for text in self.article_content:
             new_text = str(text).replace('/', '')
+            new_text = new_text.replace('\\', '')
             sentences = sent_tokenize(new_text)
             split_sentences.extend(sentences)
         return split_sentences
