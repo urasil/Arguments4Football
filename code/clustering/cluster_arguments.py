@@ -20,7 +20,7 @@ class Clustering:
         """
         if self.method == "kmeans":
             return cluster_kmeans(embeddings=self.sentence_embeddings, num_clusters=self.num_clusters)
-        # FIX ENTITIES
+        # NEED TO FIX ENTITY CODE AND LOGIC
         elif self.method == "entity":
             return cluster_by_entities(embeddings=self.sentence_embeddings, sentences=self.sentences, num_clusters=self.num_clusters)
         elif self.method == "bertopic":
