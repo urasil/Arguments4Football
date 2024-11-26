@@ -5,13 +5,8 @@ from sentence_transformers import SentenceTransformer
 
 def extract_entities(arguments):
     """
-    Extract entities from a list of arguments using spaCy.
-    
-    Parameters:
-        arguments (list of str): List of textual arguments.
-    
-    Returns:
-        entities_list (list of str): List of extracted entities from arguments.
+    Extract entities from a list of arguments using spaCy.  
+    Returns: List of extracted entities from arguments (list of str)
     """
     nlp = spacy.load("en_core_web_sm")
     entities_list = []
@@ -24,13 +19,7 @@ def extract_entities(arguments):
 def cluster_by_entities(arguments, num_clusters):
     """
     Cluster arguments based on extracted entities.
-    
-    Parameters:
-        arguments (list of str): List of textual arguments.
-        num_clusters (int): Number of clusters for K-Means.
-    
-    Returns:
-        cluster_labels (list of int): Cluster labels for each argument.
+    Returns: cluster_labels: Cluster labels for each argument (list of int)
     """
     # Step 1: Extract entities
     entities_list = extract_entities(arguments)
@@ -45,7 +34,7 @@ def cluster_by_entities(arguments, num_clusters):
     return cluster_labels
 
 if __name__ == "__main__":
-    # Example usage
+    
     arguments = [
         "Player X scored a great goal in the match.",
         "Team Y's defense strategy was ineffective.",

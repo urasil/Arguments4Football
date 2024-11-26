@@ -3,14 +3,8 @@ import numpy as np
 
 def cluster_kmeans(embeddings, num_clusters):
     """
-    Perform K-Means clustering on embeddings.
-    
-    Parameters:
-        embeddings (numpy.ndarray): Array of Sentence-BERT embeddings.
-        num_clusters (int): Number of clusters for K-Means.
-    
-    Returns:
-        cluster_labels (numpy.ndarray): Cluster labels for each argument.
+    Perform K-Means clustering on embeddings
+    Returns: Cluster labels for each argument (array)
     """
     kmeans = KMeans(n_clusters=num_clusters, random_state=42)
     cluster_labels = kmeans.fit_predict(embeddings)

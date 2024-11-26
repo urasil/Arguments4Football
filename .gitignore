@@ -3,3 +3,6 @@ _venv
 curr-pure-best
 graphics
 .env
+curr-pureroberta-best
+curr-nonfreezing-best
+curr-freezing-best
