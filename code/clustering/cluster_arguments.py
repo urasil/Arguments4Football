@@ -10,7 +10,8 @@ class Clustering:
         self.method = method
         self.num_clusters = num_clusters
         self.sentences = sentences
-        self.sentence_embeddings = EmbeddingsGenerator.get_embeddings(sentences=sentences)
+        self.embeddings_gen = EmbeddingsGenerator()
+        self.sentence_embeddings = self.embeddings_gen.get_embeddings(sentences=self.sentences)
         self.eps = eps
         self.min_samples = min_samples
 
