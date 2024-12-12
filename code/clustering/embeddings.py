@@ -1,5 +1,7 @@
 from transformers import AutoModel, AutoTokenizer, RobertaForSequenceClassification, RobertaTokenizer
 import torch
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 """
 In a transformer model like RoBERTa or BERT:
 
@@ -18,20 +20,20 @@ class EmbeddingsGenerator:
         self.model_name = model_name
         self.pooling_type = pooling_type
 
-        if "sentence-transformers" in model_name:
-            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self.model = AutoModel.from_pretrained(model_name).to(self.device)
+        if "sentence-transformers" in self.model_name:
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            self.model = AutoModel.from_pretrained(self.model_name).to(self.device)
         else:  
-            self.tokenizer = RobertaTokenizer.from_pretrained(model_name)
-            self.model = RobertaForSequenceClassification.from_pretrained(model_name).to(self.device)
+            self.tokenizer = RobertaTokenizer.from_pretrained("../curr-pure-best")
+            self.model = RobertaForSequenceClassification.from_pretrained("../curr-pure-best").to(self.device)
 
-    def get_embeddings(self, sentences):
+    def get_embeddings(self, arguments):
         """
-        Compute embeddings for a list of sentences
+        Compute embeddings for a list of arguments
         Returns: List[List[int]] - List[Embeddings]
         """
 
-        inputs = self.tokenizer(sentences, padding=True, truncation=True, return_tensors="pt").to(self.device)
+        inputs = self.tokenizer(arguments, padding=True, truncation=True, return_tensors="pt").to(self.device)
         with torch.no_grad():
             outputs = self.model(**inputs, output_hidden_states=True)
         
@@ -66,12 +68,43 @@ class EmbeddingsGenerator:
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size())
         return torch.sum(token_embeddings * input_mask_expanded, dim=1) / torch.clamp(input_mask_expanded.sum(dim=1), min=1e-9) # min defined so we avoid division by 0
 
+
+
+
+    def visualize_embeddings(self, embeddings):
+        """
+        Visualize embeddings using PCA for dimensionality reduction to 2D.
+        """
+        embeddings_np = embeddings.cpu().numpy() if hasattr(embeddings, 'cpu') else embeddings
+        reduced_embeddings = PCA(n_components=2).fit_transform(embeddings_np)
+
+        plt.figure(figsize=(10, 8))
+        plt.scatter(reduced_embeddings[:, 0], reduced_embeddings[:, 1], c='blue', alpha=0.7)
+
+        num_points = len(reduced_embeddings)
+        for i in range(num_points):
+            plt.annotate(
+                str(i),
+                (reduced_embeddings[i, 0], reduced_embeddings[i, 1]),
+                fontsize=8,
+                alpha=0.75,
+            )
+
+        plt.title("Embedding Space (PCA)")
+        plt.xlabel("Principal Component 1")
+        plt.ylabel("Principal Component 2")
+        plt.grid(alpha=0.3)
+        plt.show()
+
 # Example usage
 if __name__ == "__main__":
     arguments = [
-        "The player performed exceptionally well.",
-        "The team needs better strategies to win.",
-        "If Player X had scored, the outcome would be different."
+        "Player X's goal in the final minute proves his incredible composure under pressure. It was the decisive moment of the match.",
+        "Team Y's defensive strategy failed because they left gaps in the midfield. This allowed Player Z to exploit the space and score.",
+        "The referee made a controversial decision, awarding a penalty to Team A that changed the outcome of the game.",
+        "Player B's performance was outstanding as he scored a hat-trick, carrying his team to victory.",
+        "If the weather conditions had been better, Team C might have performed more effectively in the match.",
+        "Team D dominated possession but failed to convert their chances, highlighting their inefficiency in front of the goal."
     ]
     
     # Use Sentence-Transformers
@@ -79,7 +112,11 @@ if __name__ == "__main__":
     embeddings_st = embedder_st.get_embeddings(arguments)
     print("Sentence-Transformer Embeddings:", embeddings_st.shape)
 
+    embedder_st.visualize_embeddings(embeddings=embeddings_st)
+
     # Use Fine-tuned RoBERTa model
     embedder_ft = EmbeddingsGenerator(model_name="../curr-pure-best")
     embeddings_ft = embedder_ft.get_embeddings(arguments)
     print("Fine-Tuned RoBERTa Embeddings:", embeddings_ft.shape)
+
+    embedder_ft.visualize_embeddings(embeddings=embeddings_ft)

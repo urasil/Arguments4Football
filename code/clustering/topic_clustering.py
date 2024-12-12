@@ -1,24 +1,31 @@
 from bertopic import BERTopic
+from umap import UMAP
+import math
+from hdbscan import HDBSCAN
+
 
 def cluster_by_topics(arguments):
     """
     Cluster arguments based on latent topics using BERTopic.
     
-    Parameters:
-        arguments (list of str): List of textual arguments.
-    
-    Returns:
-        topics (list of int): Topic labels for each argument.
-        topic_info (pd.DataFrame): Information about the topics and their keywords.
+    Returns: Topic labels and topic_info
     """
-    # Step 1: Initialize BERTopic model
-    topic_model = BERTopic()
-
-    # Step 2: Fit the model on the arguments
-    topics, probs = topic_model.fit_transform(arguments)
+    if len(arguments) < 2:
+        raise ValueError("At least 2 data points are required for clustering.")
     
-    # Step 3: Get topic information
+    # Dynamically adjust n_neighbors and min_samples based on data size
+    nei = max(2, min(len(arguments) - 1, len(arguments) // 5))  # Ensure valid n_neighbors
+    min_samples = min(len(arguments) - 1, 10)  # Ensure min_samples does not exceed data points
+
+    # Configure BERTopic with UMAP and adjusted HDBSCAN
+    topic_model = BERTopic(
+        umap_model=UMAP(n_neighbors=nei, n_components=2, min_dist=0.1, random_state=31),
+        hdbscan_model=HDBSCAN(min_samples=min_samples, gen_min_span_tree=True),
+    )
+
+    topics, probs = topic_model.fit_transform(arguments)
     topic_info = topic_model.get_topic_info()
+
     return topics, topic_info
 
 if __name__ == "__main__":

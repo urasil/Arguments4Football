@@ -5,10 +5,6 @@ def cluster_dbscan(embeddings, eps=0.5, min_samples=5):
     """
     Perform DBSCAN clustering on embeddings
     Returns: Cluster labels for each argument (array)
-
-    Parameters to know:
-        - eps (float): Maximum distance between two samples for them to be considered in the same neighborhood
-        - min_samples (int): Minimum number of samples in a neighborhood for a point to be considered a core point
     """
     dbscan = DBSCAN(eps=eps, min_samples=min_samples, metric='cosine')
     cluster_labels = dbscan.fit_predict(embeddings)

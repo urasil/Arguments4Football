@@ -6,3 +6,8 @@ nltk
 scapy
 sentence-transformers
 bertopic
+umap
+matplotlib
+yellowbrick
+python-dotenv
+google-generativeai
